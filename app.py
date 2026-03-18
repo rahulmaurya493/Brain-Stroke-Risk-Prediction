@@ -11,8 +11,8 @@ st.set_page_config(
     layout="centered"
 )
 
---- Custom Styling (The "Satisfying" Look) ---
---- Custom Styling (The "Satisfying & Readable" Look) ---
+# --- Custom Styling (The "Satisfying" Look) ---
+# --- Custom Styling (The "Satisfying & Readable" Look) ---
 st.markdown("""
     <style>
     /* Main Background */
