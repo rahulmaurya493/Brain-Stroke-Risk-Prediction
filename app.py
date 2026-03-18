@@ -23,7 +23,7 @@ st.markdown("""
 
     /* Glassmorphism Card for Inputs */
     [data-testid="stVerticalBlock"] > div:nth-child(3) {
-        background: rgba(255, 255, 255, 0.1);
+        background: rgba(0, 255, 255, 0.1);
         backdrop-filter: blur(10px);
         border-radius: 20px;
         padding: 30px;
