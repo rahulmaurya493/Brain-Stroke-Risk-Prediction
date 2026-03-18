@@ -12,32 +12,63 @@ st.set_page_config(
 )
 
 # --- Custom Styling (The "Satisfying" Look) ---
-# --- Custom Styling (The "Satisfying" Look) ---
+# --- Custom Styling (The "Satisfying & Readable" Look) ---
 st.markdown("""
     <style>
+    /* Main Background */
     .stApp {
-        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
     }
+
+    /* Glassmorphism Card for Inputs */
+    [data-testid="stVerticalBlock"] > div:nth-child(3) {
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(10px);
+        border-radius: 20px;
+        padding: 30px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+    }
+
+    /* Input Label Visibility */
+    .stMarkdown p, label, .stSelectbox label, .stNumberInput label, .stRadio label {
+        color: #ffffff !important;
+        font-weight: 600 !important;
+        text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+    }
+
+    /* Button Styling */
     .stButton>button {
         width: 100%;
-        border-radius: 20px;
-        height: 3em;
-        background-color: #4A90E2;
+        border-radius: 50px;
+        height: 3.5em;
+        background: linear-gradient(90deg, #00d2ff 0%, #3a7bd5 100%);
         color: white;
         border: none;
-        transition: 0.3s;
+        transition: 0.5s;
         font-weight: bold;
+        font-size: 18px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
     }
+    
     .stButton>button:hover {
-        background-color: #357ABD;
-        transform: scale(1.02);
+        transform: translateY(-3px);
+        box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+        color: #fff;
     }
+
+    /* Metric/Result Styling */
     div[data-testid="stMetricValue"] {
-        font-size: 40px;
-        color: #4A90E2;
+        color: #ffffff !important;
+        background: rgba(0,0,0,0.2);
+        border-radius: 10px;
+        padding: 10px;
     }
     </style>
-    """, unsafe_allow_html=True) # Changed from unsafe_all_header_strings
+    """, unsafe_allow_html=True)
 
 # --- Load the Model ---
 @st.cache_resource
