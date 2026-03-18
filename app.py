@@ -12,9 +12,10 @@ st.set_page_config(
 )
 
 # --- Custom Styling (The "Satisfying" Look) ---
+# --- Custom Styling (The "Satisfying" Look) ---
 st.markdown("""
     <style>
-    .main {
+    .stApp {
         background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
     }
     .stButton>button {
@@ -35,11 +36,8 @@ st.markdown("""
         font-size: 40px;
         color: #4A90E2;
     }
-    .reportview-container .main .block-container {
-        padding-top: 2rem;
-    }
     </style>
-    """, unsafe_all_header_strings=True)
+    """, unsafe_allow_html=True) # Changed from unsafe_all_header_strings
 
 # --- Load the Model ---
 @st.cache_resource
