@@ -13,29 +13,99 @@ st.set_page_config(
 
 # --- Custom Styling (The "Satisfying" Look) ---
 # --- Custom Styling (The "Satisfying & Readable" Look) ---
+# st.markdown("""
+#     <style>
+#     /* Main Background */
+#     .stApp {
+#         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+#         color: white;
+#     }
+
+#     /* Glassmorphism Card for Inputs */
+#     [data-testid="stVerticalBlock"] > div:nth-child(3) {
+#         background: rgba(255, 255, 255, 0.1);
+#         backdrop-filter: blur(10px);
+#         border-radius: 20px;
+#         padding: 30px;
+#         border: 1px solid rgba(255, 255, 255, 0.2);
+#         box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+#     }
+
+#     /* Input Label Visibility */
+#     .stMarkdown p, label, .stSelectbox label, .stNumberInput label, .stRadio label {
+#         color: #ffffff !important;
+#         font-weight: 600 !important;
+#         text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+#     }
+
+#     /* Button Styling */
+#     .stButton>button {
+#         width: 100%;
+#         border-radius: 50px;
+#         height: 3.5em;
+#         background: linear-gradient(90deg, #00d2ff 0%, #3a7bd5 100%);
+#         color: white;
+#         border: none;
+#         transition: 0.5s;
+#         font-weight: bold;
+#         font-size: 18px;
+#         text-transform: uppercase;
+#         letter-spacing: 1px;
+#         box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+#     }
+    
+#     .stButton>button:hover {
+#         transform: translateY(-3px);
+#         box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+#         color: #fff;
+#     }
+
+#     /* Metric/Result Styling */
+#     div[data-testid="stMetricValue"] {
+#         color: #ffffff !important;
+#         background: rgba(0,0,0,0.2);
+#         border-radius: 10px;
+#         padding: 10px;
+#     }
+#     </style>
+#     """, unsafe_allow_html=True)
+
+
+# --- Custom Styling (Fixed Visibility) ---
 st.markdown("""
     <style>
     /* Main Background */
     .stApp {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: linear-gradient(135deg, #1e3a8a 0%, #4c1d95 100%);
         color: white;
     }
 
     /* Glassmorphism Card for Inputs */
     [data-testid="stVerticalBlock"] > div:nth-child(3) {
-        background: rgba(255, 255, 255, 0.1);
-        backdrop-filter: blur(10px);
+        background: rgba(255, 255, 255, 0.05);
+        backdrop-filter: blur(15px);
         border-radius: 20px;
         padding: 30px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    /* FIX: Visibility for "Please fill in the medical information" */
+    .stAlert p {
+        color: #ffffff !important;
+        font-size: 18px !important;
+        font-weight: 700 !important;
+    }
+    
+    /* Make Alert box background slightly darker for contrast */
+    div[data-testid="stNotification"] {
+        background-color: rgba(0, 0, 0, 0.3) !important;
         border: 1px solid rgba(255, 255, 255, 0.2);
-        box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
     }
 
     /* Input Label Visibility */
-    .stMarkdown p, label, .stSelectbox label, .stNumberInput label, .stRadio label {
+    label, .stSelectbox label, .stNumberInput label, .stRadio label {
         color: #ffffff !important;
         font-weight: 600 !important;
-        text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
     }
 
     /* Button Styling */
@@ -43,32 +113,20 @@ st.markdown("""
         width: 100%;
         border-radius: 50px;
         height: 3.5em;
-        background: linear-gradient(90deg, #00d2ff 0%, #3a7bd5 100%);
+        background: linear-gradient(90deg, #3b82f6 0%, #8b5cf6 100%);
         color: white;
         border: none;
-        transition: 0.5s;
         font-weight: bold;
-        font-size: 18px;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        transition: 0.3s;
     }
     
     .stButton>button:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 6px 20px rgba(0,0,0,0.4);
-        color: #fff;
-    }
-
-    /* Metric/Result Styling */
-    div[data-testid="stMetricValue"] {
-        color: #ffffff !important;
-        background: rgba(0,0,0,0.2);
-        border-radius: 10px;
-        padding: 10px;
+        transform: scale(1.02);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.3);
     }
     </style>
     """, unsafe_allow_html=True)
+
 
 # --- Load the Model ---
 @st.cache_resource
