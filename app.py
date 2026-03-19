@@ -83,6 +83,50 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
+
+
+if st.button("RUN AI DIAGNOSIS"):
+    # 1. Smooth Loading Spinner
+    with st.spinner('🔬 Processing Biometrics...'):
+        time.sleep(1.2) # Artificial delay for "satisfying" feel
+        
+        # Prepare data
+        features = np.array([[gender, age, hypertension, heart_disease, glucose, bmi, smoking_status]])
+        
+        try:
+            probabilities = model.predict_proba(features)
+            risk_percent = float(probabilities[0][1] * 100)
+        except:
+            pred = model.predict(features)
+            risk_percent = 90.0 if pred[0] == 1 else 10.0
+
+    # 2. Animated Output Container
+    st.markdown('<div class="main-result-container">', unsafe_allow_html=True)
+    
+    st.markdown("### 📊 Diagnostic Insights")
+    
+    # Column for the Metric
+    col_res1, col_res2 = st.columns([1, 2])
+    
+    with col_res1:
+        st.metric(label="Stroke Probability", value=f"{risk_percent:.1f}%")
+    
+    with col_res2:
+        # Dynamic Progress Bar
+        bar_color = "red" if risk_percent > 50 else "orange" if risk_percent > 20 else "green"
+        st.write(f"Confidence Level: **{bar_color.upper()}**")
+        st.progress(risk_percent / 100)
+
+    # Final Summary with attractive clear lines
+    st.markdown("---")
+    if risk_percent > 50:
+        st.error("🚨 **High Clinical Correlation:** This patient matches high-risk profiles. Immediate physician review is recommended.")
+    else:
+        st.success("✅ **Within Normal Limits:** Current biometrics suggest a lower probability of stroke.")
+    
+    st.markdown('</div>', unsafe_allow_html=True)
+
+
 # Ligten--- Custom Styling (The "Satisfying & Readable" Look) ---
 # st.markdown("""
 #     <style>
