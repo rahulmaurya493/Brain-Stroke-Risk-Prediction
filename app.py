@@ -424,6 +424,10 @@ def page_main():
                 glucose=avg_glucose_level, bmi=bmi, smoking=smoking_input,
             )
 
+    # ── Show results whenever we have them (outside the button block) ──
+    if st.session_state.result is not None:
+        risk = st.session_state.result["risk_percent"]
+
         st.subheader("Analysis Results")
         if risk > 50:
             st.warning("Analysis indicates a high concern level.")
