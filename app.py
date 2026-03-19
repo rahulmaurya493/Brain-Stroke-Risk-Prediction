@@ -11,17 +11,15 @@ st.set_page_config(
     layout="centered"
 )
 
-
-# Ligten--- Custom Styling (The "Satisfying & Readable" Look) ---
 st.markdown("""
     <style>
-    /* Main Background */
+    /* Main Background remains as you liked */
     .stApp {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         color: white;
     }
 
-    /* Glassmorphism Card for Inputs */
+    /* Glassmorphism Card */
     [data-testid="stVerticalBlock"] > div:nth-child(3) {
         background: rgba(255, 255, 255, 0.1);
         backdrop-filter: blur(10px);
@@ -31,14 +29,13 @@ st.markdown("""
         box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
     }
 
-    /* Input Label Visibility */
-    .stMarkdown p, label, .stSelectbox label, .stNumberInput label, .stRadio label {
+    /* Instruction Text Visibility Fix */
+    .stAlert p {
         color: #ffffff !important;
-        font-weight: 600 !important;
-        text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+        font-weight: 700 !important;
     }
 
-    /* Button Styling */
+    /* Button with Touch Animation */
     .stButton>button {
         width: 100%;
         border-radius: 50px;
@@ -46,29 +43,103 @@ st.markdown("""
         background: linear-gradient(90deg, #00d2ff 0%, #3a7bd5 100%);
         color: white;
         border: none;
-        transition: 0.5s;
+        transition: all 0.2s ease; /* Faster transition for snappier feel */
         font-weight: bold;
         font-size: 18px;
         text-transform: uppercase;
         letter-spacing: 1px;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.3);
     }
     
+    /* Hover Effect */
     .stButton>button:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 6px 20px rgba(0,0,0,0.4);
-        color: #fff;
+        transform: translateY(-2px);
+        box-shadow: 0 0 20px rgba(0, 210, 255, 0.6); /* Cyan Glow */
     }
 
-    /* Metric/Result Styling */
+    /* TOUCH/CLICK ANIMATION: Shrinks slightly when clicked */
+    .stButton>button:active {
+        transform: scale(0.95);
+        box-shadow: 0 2px 10px rgba(0,0,0,0.5);
+    }
+
+    /* Smooth Fade-in for Content Loading */
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    .main-result-container {
+        animation: fadeIn 0.8s ease-out;
+    }
+
+    /* Metric Styling */
     div[data-testid="stMetricValue"] {
         color: #ffffff !important;
-        background: rgba(0,0,0,0.2);
-        border-radius: 10px;
-        padding: 10px;
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 15px;
+        padding: 15px;
     }
     </style>
     """, unsafe_allow_html=True)
+
+# Ligten--- Custom Styling (The "Satisfying & Readable" Look) ---
+# st.markdown("""
+#     <style>
+#     /* Main Background */
+#     .stApp {
+#         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+#         color: white;
+#     }
+
+#     /* Glassmorphism Card for Inputs */
+#     [data-testid="stVerticalBlock"] > div:nth-child(3) {
+#         background: rgba(255, 255, 255, 0.1);
+#         backdrop-filter: blur(10px);
+#         border-radius: 20px;
+#         padding: 30px;
+#         border: 1px solid rgba(255, 255, 255, 0.2);
+#         box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+#     }
+
+#     /* Input Label Visibility */
+#     .stMarkdown p, label, .stSelectbox label, .stNumberInput label, .stRadio label {
+#         color: #ffffff !important;
+#         font-weight: 600 !important;
+#         text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+#     }
+
+#     /* Button Styling */
+#     .stButton>button {
+#         width: 100%;
+#         border-radius: 50px;
+#         height: 3.5em;
+#         background: linear-gradient(90deg, #00d2ff 0%, #3a7bd5 100%);
+#         color: white;
+#         border: none;
+#         transition: 0.5s;
+#         font-weight: bold;
+#         font-size: 18px;
+#         text-transform: uppercase;
+#         letter-spacing: 1px;
+#         box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+#     }
+    
+#     .stButton>button:hover {
+#         transform: translateY(-3px);
+#         box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+#         color: #fff;
+#     }
+
+#     /* Metric/Result Styling */
+#     div[data-testid="stMetricValue"] {
+#         color: #ffffff !important;
+#         background: rgba(0,0,0,0.2);
+#         border-radius: 10px;
+#         padding: 10px;
+#     }
+#     </style>
+#     """, unsafe_allow_html=True)
 
 
 # DARK --- Custom Styling (Fixed Visibility) ---
