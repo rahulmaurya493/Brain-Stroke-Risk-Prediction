@@ -144,16 +144,18 @@ def build_pdf(r, risk_label, avg_risk, rf_count, bmi_label, gluc_label, tips):
     GREY   = colors.HexColor("#555577")
     rc = RED if r["risk_percent"] >= 60 else (ORANGE if r["risk_percent"] >= 30 else GREEN)
     styles = getSampleStyleSheet()
-    ts = ParagraphStyle("T", parent=styles["Normal"], fontSize=22, fontName="Helvetica-Bold", textColor=PURPLE, alignment=TA_CENTER, spaceAfter=4)
-    ss = ParagraphStyle("S", parent=styles["Normal"], fontSize=10, textColor=GREY, alignment=TA_CENTER, spaceAfter=2)
-    hs = ParagraphStyle("H", parent=styles["Normal"], fontSize=13, fontName="Helvetica-Bold", textColor=PURPLE, spaceBefore=14, spaceAfter=6)
+    ts = ParagraphStyle("T", parent=styles["Normal"], fontSize=22, fontName="Helvetica-Bold", textColor=PURPLE, alignment=TA_CENTER, spaceAfter=10)
+    ss = ParagraphStyle("S", parent=styles["Normal"], fontSize=10, textColor=GREY, alignment=TA_CENTER, spaceAfter=8)hs = ParagraphStyle("H", parent=styles["Normal"], fontSize=13, fontName="Helvetica-Bold", textColor=PURPLE, spaceBefore=14, spaceAfter=6)
     bs = ParagraphStyle("B", parent=styles["Normal"], fontSize=9.5, textColor=DARK, leading=15, spaceAfter=4)
     ds = ParagraphStyle("D", parent=styles["Normal"], fontSize=8, textColor=GREY, leading=12, borderPad=6, backColor=colors.HexColor("#fff8e1"), borderColor=ORANGE, borderWidth=0.5, borderRadius=4)
     story = []
     story.append(Paragraph("StrokeGuard AI", ts))
+    story.append(Spacer(1, 6))
     story.append(Paragraph("Doctor's Summary Report - Confidential", ss))
+    story.append(Spacer(1, 6))
     story.append(Paragraph(f"Patient: <b>{st.session_state.user_name}</b> | Generated: {time.strftime('%d %B %Y, %H:%M')}", ss))
-    story.append(HRFlowable(width="100%", thickness=1.5, color=PURPLE, spaceAfter=12, spaceBefore=6))
+    story.append(Spacer(1, 10))
+    story.append(HRFlowable(width="100%", thickness=1.5, color=PURPLE, spaceAfter=14, spaceBefore=4))
     banner = Table([[
         Paragraph(f"<font size=26><b><font color='{rc.hexval()}'>{r['risk_percent']:.1f}%</font></b></font>",
                   ParagraphStyle("Rv", alignment=TA_CENTER, leading=30)),
