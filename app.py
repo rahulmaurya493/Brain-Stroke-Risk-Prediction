@@ -145,7 +145,8 @@ def build_pdf(r, risk_label, avg_risk, rf_count, bmi_label, gluc_label, tips):
     rc = RED if r["risk_percent"] >= 60 else (ORANGE if r["risk_percent"] >= 30 else GREEN)
     styles = getSampleStyleSheet()
     ts = ParagraphStyle("T", parent=styles["Normal"], fontSize=22, fontName="Helvetica-Bold", textColor=PURPLE, alignment=TA_CENTER, spaceAfter=10)
-    ss = ParagraphStyle("S", parent=styles["Normal"], fontSize=10, textColor=GREY, alignment=TA_CENTER, spaceAfter=8)hs = ParagraphStyle("H", parent=styles["Normal"], fontSize=13, fontName="Helvetica-Bold", textColor=PURPLE, spaceBefore=14, spaceAfter=6)
+    ss = ParagraphStyle("S", parent=styles["Normal"], fontSize=10, textColor=GREY, alignment=TA_CENTER, spaceAfter=8)
+    hs = ParagraphStyle("H", parent=styles["Normal"], fontSize=13, fontName="Helvetica-Bold", textColor=PURPLE, spaceBefore=14, spaceAfter=6)
     bs = ParagraphStyle("B", parent=styles["Normal"], fontSize=9.5, textColor=DARK, leading=15, spaceAfter=4)
     ds = ParagraphStyle("D", parent=styles["Normal"], fontSize=8, textColor=GREY, leading=12, borderPad=6, backColor=colors.HexColor("#fff8e1"), borderColor=ORANGE, borderWidth=0.5, borderRadius=4)
     story = []
