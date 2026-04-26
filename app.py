@@ -16,8 +16,8 @@ from supabase import create_client, Client
 # ─── Supabase Setup ─────────────────────────────────────────
 @st.cache_resource
 def get_supabase() -> Client:
-    url = st.secrets["https://wlwcazlnvtfybklefsdk.supabase.co"]
-    key = st.secrets["sb_publishable_yQfQFR9BSOkikOX8YZRHQQ_eIiy8TXx"]
+    url = st.secrets["SUPABASE_URL"]
+    key = st.secrets["SUPABASE_KEY"]
     return create_client(url, key)
 
 supabase = get_supabase()
