@@ -4,5 +4,4 @@ pandas
 scikit-learn
 xgboost
 reportlab
-pickle5
 supabase
