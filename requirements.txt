@@ -5,4 +5,4 @@ scikit-learn
 xgboost
 reportlab
 pickle5
-supabase
+supabase==2.3.7
