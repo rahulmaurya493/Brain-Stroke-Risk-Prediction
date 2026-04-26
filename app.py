@@ -3,6 +3,7 @@ import numpy as np
 import pickle
 import time
 import io
+import math
 from reportlab.lib.pagesizes import A4
 from reportlab.lib import colors
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
@@ -10,6 +11,16 @@ from reportlab.lib.units import cm
 from reportlab.platypus import (SimpleDocTemplate, Paragraph, Spacer,
                                  Table, TableStyle, HRFlowable)
 from reportlab.lib.enums import TA_CENTER, TA_LEFT
+from supabase import create_client, Client
+
+# ─── Supabase Setup ─────────────────────────────────────────
+@st.cache_resource
+def get_supabase() -> Client:
+    url = st.secrets["SUPABASE_URL"]
+    key = st.secrets["SUPABASE_KEY"]
+    return create_client(url, key)
+
+supabase = get_supabase()
 
 st.set_page_config(page_title="StrokeGuard AI", page_icon="🧠", layout="centered")
 
@@ -41,6 +52,10 @@ html, body, .stApp { font-family: 'Nunito', sans-serif; }
 .glossary-item:last-child { border-bottom: none; }
 .glossary-term { font-weight: 800; color: #a8d8ff; font-size: 0.92rem; margin-bottom: 3px; }
 .glossary-def  { color: rgba(255,255,255,0.72); font-size: 0.85rem; line-height: 1.55; }
+.history-card { background: rgba(255,255,255,0.10); border: 1px solid rgba(255,255,255,0.20); border-radius: 18px; padding: 20px 24px; margin-bottom: 14px; transition: transform 0.22s ease, box-shadow 0.22s ease; cursor: default; }
+.history-card:hover { transform: translateY(-3px); box-shadow: 0 10px 28px rgba(0,0,0,0.20); }
+.history-date { color: rgba(255,255,255,0.50); font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 6px; }
+.history-risk { font-size: 1.6rem; font-weight: 900; }
 h1, h2, h3, h4, h5, h6 { color: #ffffff !important; font-family: 'Raleway', sans-serif; }
 label, .stRadio label, .stSelectbox label, .stSlider label, .stNumberInput label, .stTextInput label, .stPasswordInput label { color: rgba(255,255,255,0.88) !important; font-weight: 700 !important; font-size: 0.90rem !important; }
 .stTextInput input, .stPasswordInput input { background: rgba(255,255,255,0.16) !important; border: 1px solid rgba(255,255,255,0.30) !important; border-radius: 14px !important; color: #ffffff !important; padding: 12px 16px !important; font-size: 1rem !important; transition: border-color 0.2s, box-shadow 0.2s; }
@@ -76,19 +91,89 @@ hr { border-color: rgba(255,255,255,0.18) !important; }
 </style>
 """, unsafe_allow_html=True)
 
-# SESSION STATE
-for k, v in {"page":"auth","auth_mode":"login","user_name":"","users":{},"result":None}.items():
+# ─── SESSION STATE ───────────────────────────────────────────
+for k, v in {
+    "page": "auth",
+    "auth_mode": "login",
+    "user_name": "",
+    "user_phone": "",
+    "result": None
+}.items():
     if k not in st.session_state:
         st.session_state[k] = v
 
-# MODEL
+# ─── MODEL ──────────────────────────────────────────────────
 @st.cache_resource
 def load_model():
-    with open('stroke_model.pkl','rb') as f:
+    with open('stroke_model.pkl', 'rb') as f:
         return pickle.load(f)
 model = load_model()
 
-# HELPERS
+# ─── DATABASE HELPERS ────────────────────────────────────────
+def db_register(name, phone, password):
+    try:
+        existing = supabase.table("users").select("*").eq("phone", phone).execute()
+        if existing.data:
+            return False, "Account already exists. Please sign in."
+        supabase.table("users").insert({
+            "name": name,
+            "phone": phone,
+            "password": password
+        }).execute()
+        return True, "Success"
+    except Exception as e:
+        return False, str(e)
+
+def db_login(phone, password):
+    try:
+        result = supabase.table("users").select("*").eq("phone", phone).execute()
+        if not result.data:
+            return False, None, "No account found. Please register first."
+        user = result.data[0]
+        if user["password"] != password:
+            return False, None, "Incorrect password."
+        return True, user["name"], "Success"
+    except Exception as e:
+        return False, None, str(e)
+
+def db_save_history(phone, name, result, risk_label):
+    try:
+        supabase.table("history").insert({
+            "user_phone":   phone,
+            "user_name":    name,
+            "risk_percent": round(result["risk_percent"], 2),
+            "risk_label":   risk_label,
+            "age":          result["age"],
+            "gender":       result["gender"],
+            "bmi":          round(result["bmi"], 2),
+            "glucose":      round(result["glucose"], 2),
+            "hypertension": result["hypertension"],
+            "heart_disease":result["heart_disease"],
+            "smoking":      result["smoking"],
+        }).execute()
+        return True
+    except Exception as e:
+        return False
+
+def db_get_history(phone):
+    try:
+        result = supabase.table("history")\
+            .select("*")\
+            .eq("user_phone", phone)\
+            .order("assessed_at", desc=True)\
+            .execute()
+        return result.data
+    except:
+        return []
+
+def db_delete_history(record_id):
+    try:
+        supabase.table("history").delete().eq("id", record_id).execute()
+        return True
+    except:
+        return False
+
+# ─── HELPERS ────────────────────────────────────────────────
 def age_avg_risk(age):
     if age < 40: return 1.2
     if age < 50: return 2.8
@@ -97,7 +182,6 @@ def age_avg_risk(age):
     return 14.5
 
 def gauge_svg(pct):
-    import math
     angle = pct / 100 * 180
     rad = math.radians(180 - angle)
     cx, cy, r = 160, 135, 105
@@ -128,7 +212,7 @@ def gauge_svg(pct):
   <text x="272" y="152" text-anchor="middle" font-family="Nunito,sans-serif" font-size="10" fill="rgba(255,255,255,0.42)">100%</text>
 </svg>"""
 
-# PDF BUILDER
+# ─── PDF BUILDER ─────────────────────────────────────────────
 def build_pdf(r, risk_label, avg_risk, rf_count, bmi_label, gluc_label, tips):
     buf = io.BytesIO()
     doc = SimpleDocTemplate(buf, pagesize=A4,
@@ -172,7 +256,7 @@ def build_pdf(r, risk_label, avg_risk, rf_count, bmi_label, gluc_label, tips):
     story.append(banner)
     story.append(Spacer(1,14))
     story.append(Paragraph("Clinical Profile", hs))
-    pd = [["Parameter","Your Value","Ideal / Normal"],
+    pd_data = [["Parameter","Your Value","Ideal / Normal"],
           ["Gender", r["gender"], "-"],
           ["Age", f"{r['age']} years", "-"],
           ["BMI", f"{r['bmi']:.1f} ({bmi_label})", "18.5 - 24.9"],
@@ -180,7 +264,7 @@ def build_pdf(r, risk_label, avg_risk, rf_count, bmi_label, gluc_label, tips):
           ["Hypertension", r["hypertension"], "No History"],
           ["Heart Disease", r["heart_disease"], "None"],
           ["Smoking", r["smoking"], "Never Smoked"]]
-    tbl = Table(pd, colWidths=["38%","32%","30%"])
+    tbl = Table(pd_data, colWidths=["38%","32%","30%"])
     tbl.setStyle(TableStyle([
         ("BACKGROUND",(0,0),(-1,0),PURPLE), ("TEXTCOLOR",(0,0),(-1,0),colors.white),
         ("FONTNAME",(0,0),(-1,0),"Helvetica-Bold"), ("FONTSIZE",(0,0),(-1,0),9.5),
@@ -214,7 +298,7 @@ def build_pdf(r, risk_label, avg_risk, rf_count, bmi_label, gluc_label, tips):
     buf.seek(0)
     return buf.read()
 
-# PAGE 1 - AUTH (Register + Login)
+# ─── PAGE 1 - AUTH ───────────────────────────────────────────
 def page_auth():
     st.markdown("<div class='fade-in'>", unsafe_allow_html=True)
     st.markdown("""
@@ -254,14 +338,15 @@ def page_auth():
                 st.error("Password must be at least 4 characters.")
             elif r_pwd != r_pwd2:
                 st.error("Passwords do not match.")
-            elif digits in st.session_state.users:
-                st.error("Account already exists. Please sign in.")
             else:
-                st.session_state.users[digits] = {"name": r_name.strip(), "password": r_pwd}
-                st.success("Account created! Switching to Sign In…")
-                time.sleep(1)
-                st.session_state.auth_mode = "login"
-                st.rerun()
+                success, msg = db_register(r_name.strip(), digits, r_pwd)
+                if success:
+                    st.success("Account created! Switching to Sign In…")
+                    time.sleep(1)
+                    st.session_state.auth_mode = "login"
+                    st.rerun()
+                else:
+                    st.error(msg)
     else:
         st.markdown("### 👤 &nbsp; Welcome Back")
         st.markdown("<p style='color:rgba(255,255,255,0.58);font-size:0.88rem;margin-top:-10px;'>Sign in to access your health dashboard</p>", unsafe_allow_html=True)
@@ -272,35 +357,42 @@ def page_auth():
             digits = "".join(c for c in l_phone if c.isdigit())
             if len(digits) < 10:
                 st.error("Please enter a valid phone number.")
-            elif digits not in st.session_state.users:
-                st.error("No account found. Please register first.")
-            elif st.session_state.users[digits]["password"] != l_pwd:
-                st.error("Incorrect password.")
             else:
                 with st.spinner("Authenticating…"):
+                    success, name, msg = db_login(digits, l_pwd)
                     time.sleep(0.8)
-                st.session_state.user_name = st.session_state.users[digits]["name"].split()[0]
-                st.session_state.page = "main"
-                st.rerun()
+                if success:
+                    st.session_state.user_name  = name.split()[0]
+                    st.session_state.user_phone = digits
+                    st.session_state.page = "main"
+                    st.rerun()
+                else:
+                    st.error(msg)
 
     st.markdown("</div>", unsafe_allow_html=True)
     st.markdown("""
     <div style='text-align:center;margin-top:8px;'>
-        <span style='color:rgba(255,255,255,0.46);font-size:0.80rem;'>🔒 &nbsp;Your data is encrypted and never stored externally.</span>
+        <span style='color:rgba(255,255,255,0.46);font-size:0.80rem;'>🔒 &nbsp;Your data is securely stored in the cloud.</span>
     </div>
     <div class='footer-text'>Powered by XGBoost &amp; Streamlit &nbsp;|&nbsp; StrokeGuard v2.0</div>
     """, unsafe_allow_html=True)
     st.markdown("</div>", unsafe_allow_html=True)
 
-# PAGE 2 - MAIN (identical to original)
+# ─── PAGE 2 - MAIN ───────────────────────────────────────────
 def page_main():
-    cg, cl = st.columns([5,1])
+    # Top nav
+    cg, ch, cl = st.columns([4, 1, 1])
     with cg:
         st.markdown(f"<p style='color:rgba(255,255,255,0.72);margin-bottom:0;'>👋 Hello, <strong>{st.session_state.user_name}</strong></p>", unsafe_allow_html=True)
+    with ch:
+        if st.button("📋 History", key="nav_history"):
+            st.session_state.page = "history"
+            st.rerun()
     with cl:
-        if st.button("Logout"):
-            st.session_state.page = "auth"
-            st.session_state.result = None
+        if st.button("Logout", key="nav_logout"):
+            st.session_state.page    = "auth"
+            st.session_state.result  = None
+            st.session_state.user_phone = ""
             st.rerun()
 
     st.title("🧠 StrokeGuard AI")
@@ -333,9 +425,28 @@ def page_main():
             feats = np.array([[gender, age, hypertension, heart_disease, avg_glucose_level, bmi, smoking_status]])
             probs = model.predict_proba(feats)
             risk = float(probs[0][1] * 100)
-            st.session_state.result = dict(risk_percent=risk, gender=gender_input, age=age,
-                hypertension=hyper_input, heart_disease=heart_input,
-                glucose=avg_glucose_level, bmi=bmi, smoking=smoking_input)
+            result = dict(
+                risk_percent=risk,
+                gender=gender_input,
+                age=age,
+                hypertension=hyper_input,
+                heart_disease=heart_input,
+                glucose=avg_glucose_level,
+                bmi=bmi,
+                smoking=smoking_input
+            )
+            st.session_state.result = result
+
+            # ✅ Auto-save to history database
+            risk_label = "High Risk" if risk >= 60 else ("Moderate Risk" if risk >= 30 else "Low Risk")
+            saved = db_save_history(
+                st.session_state.user_phone,
+                st.session_state.user_name,
+                result,
+                risk_label
+            )
+            if saved:
+                st.toast("✅ Assessment saved to your history!", icon="💾")
 
     if st.session_state.result is not None:
         risk = st.session_state.result["risk_percent"]
@@ -357,7 +468,7 @@ def page_main():
 
     st.markdown("<br><hr><center><small>Powered by XGBoost &amp; Streamlit | Project Version 2.0</small></center>", unsafe_allow_html=True)
 
-# PAGE 3 - REPORT (what-if removed, PDF download)
+# ─── PAGE 3 - REPORT ─────────────────────────────────────────
 def page_summary():
     r = st.session_state.result
     if r is None:
@@ -366,16 +477,16 @@ def page_summary():
             st.session_state.page = "main"; st.rerun()
         return
 
-    risk = r["risk_percent"]
-    age = r["age"]
-    bmi_v = r["bmi"]
-    gluc = r["glucose"]
+    risk   = r["risk_percent"]
+    age    = r["age"]
+    bmi_v  = r["bmi"]
+    gluc   = r["glucose"]
     is_high = risk >= 60
     is_mod  = 30 <= risk < 60
 
-    if is_high:   risk_label, badge_cls, ring_color = "High Risk",     "risk-high", "#ff5f5f"
-    elif is_mod:  risk_label, badge_cls, ring_color = "Moderate Risk", "risk-mod",  "#ffb347"
-    else:         risk_label, badge_cls, ring_color = "Low Risk",      "risk-low",  "#00dc82"
+    if is_high:   risk_label, badge_cls = "High Risk",     "risk-high"
+    elif is_mod:  risk_label, badge_cls = "Moderate Risk", "risk-mod"
+    else:         risk_label, badge_cls = "Low Risk",      "risk-low"
 
     bmi_label  = ("Underweight" if bmi_v < 18.5 else ("Normal" if bmi_v < 25 else ("Overweight" if bmi_v < 30 else "Obese")))
     gluc_label = ("Normal" if gluc < 100 else ("Pre-Diabetic" if gluc < 126 else "High / Diabetic Range"))
@@ -384,10 +495,13 @@ def page_summary():
                       r["smoking"]=="Regular Smoker", gluc>140, bmi_v>30])
 
     st.markdown("<div class='fade-in'>", unsafe_allow_html=True)
-    cb, _ = st.columns([1,4])
+    cb, _, ch = st.columns([1, 3, 1])
     with cb:
         if st.button("← Back"):
             st.session_state.page = "main"; st.rerun()
+    with ch:
+        if st.button("📋 History"):
+            st.session_state.page = "history"; st.rerun()
 
     st.markdown(f"""
     <div style='text-align:center;padding:10px 0 18px;'>
@@ -409,7 +523,7 @@ def page_summary():
     st.markdown("</div>", unsafe_allow_html=True)
 
     # STAT BOXES
-    c1,c2,c3 = st.columns(3)
+    c1, c2, c3 = st.columns(3)
     with c1:
         st.markdown(f"<div class='stat-box fade-in-2'><div class='stat-value'>{age}</div><div class='stat-label'>Age (yrs)</div></div>", unsafe_allow_html=True)
     with c2:
@@ -510,10 +624,127 @@ def page_summary():
     """, unsafe_allow_html=True)
     st.markdown("</div>", unsafe_allow_html=True)
 
-# ROUTER
+# ─── PAGE 4 - HISTORY ────────────────────────────────────────
+def page_history():
+    st.markdown("<div class='fade-in'>", unsafe_allow_html=True)
+
+    # Top nav
+    cb, _, cl = st.columns([1, 3, 1])
+    with cb:
+        if st.button("← Back"):
+            st.session_state.page = "main"; st.rerun()
+    with cl:
+        if st.button("Logout"):
+            st.session_state.page = "auth"
+            st.session_state.result = None
+            st.session_state.user_phone = ""
+            st.rerun()
+
+    st.markdown(f"""
+    <div style='text-align:center;padding:10px 0 18px;'>
+        <div style='font-size:2.4rem;'>📋</div>
+        <h1 style='font-size:1.95rem;font-weight:900;margin:4px 0 2px;'>Assessment History</h1>
+        <p style='color:rgba(255,255,255,0.58);font-size:0.92rem;'>{st.session_state.user_name}'s Past Reports</p>
+    </div>""", unsafe_allow_html=True)
+
+    # Fetch history
+    with st.spinner("Loading your history..."):
+        records = db_get_history(st.session_state.user_phone)
+
+    if not records:
+        st.markdown("""
+        <div class='glass-card' style='text-align:center;padding:40px;'>
+            <div style='font-size:3rem;margin-bottom:12px;'>🔍</div>
+            <h3>No History Found</h3>
+            <p style='color:rgba(255,255,255,0.58);'>Run your first assessment to see history here!</p>
+        </div>""", unsafe_allow_html=True)
+    else:
+        # Summary stats at top
+        total = len(records)
+        high_count = sum(1 for r in records if r["risk_label"] == "High Risk")
+        mod_count  = sum(1 for r in records if r["risk_label"] == "Moderate Risk")
+        low_count  = sum(1 for r in records if r["risk_label"] == "Low Risk")
+        avg_risk   = sum(r["risk_percent"] for r in records) / total
+
+        c1, c2, c3, c4 = st.columns(4)
+        with c1:
+            st.markdown(f"<div class='stat-box'><div class='stat-value'>{total}</div><div class='stat-label'>Total Tests</div></div>", unsafe_allow_html=True)
+        with c2:
+            st.markdown(f"<div class='stat-box'><div class='stat-value' style='color:#ff9999;'>{high_count}</div><div class='stat-label'>High Risk</div></div>", unsafe_allow_html=True)
+        with c3:
+            st.markdown(f"<div class='stat-box'><div class='stat-value' style='color:#ffe0a0;'>{mod_count}</div><div class='stat-label'>Moderate</div></div>", unsafe_allow_html=True)
+        with c4:
+            st.markdown(f"<div class='stat-box'><div class='stat-value' style='color:#aaffd8;'>{low_count}</div><div class='stat-label'>Low Risk</div></div>", unsafe_allow_html=True)
+
+        st.markdown(f"<p style='text-align:center;color:rgba(255,255,255,0.55);font-size:0.85rem;margin:8px 0 18px;'>📊 Average risk across all assessments: <strong>{avg_risk:.1f}%</strong></p>", unsafe_allow_html=True)
+
+        st.markdown("---")
+
+        # Each history record
+        for i, rec in enumerate(records):
+            risk     = rec["risk_percent"]
+            label    = rec["risk_label"]
+            date_raw = rec.get("assessed_at", "")
+
+            # Format date nicely
+            try:
+                from datetime import datetime
+                dt = datetime.fromisoformat(date_raw.replace("Z", "+00:00"))
+                date_str = dt.strftime("%d %B %Y  •  %I:%M %p")
+            except:
+                date_str = date_raw[:16] if date_raw else "Unknown date"
+
+            # Risk color
+            if "High" in label:
+                risk_color = "#ff9999"
+                badge = "risk-high"
+            elif "Moderate" in label:
+                risk_color = "#ffe0a0"
+                badge = "risk-mod"
+            else:
+                risk_color = "#aaffd8"
+                badge = "risk-low"
+
+            st.markdown(f"""
+            <div class='history-card'>
+                <div class='history-date'>🕐 &nbsp;{date_str}</div>
+                <div style='display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;'>
+                    <div>
+                        <span class='history-risk' style='color:{risk_color};'>{risk:.1f}%</span>
+                        &nbsp;&nbsp;<span class='risk-badge {badge}'>{label}</span>
+                    </div>
+                    <div style='color:rgba(255,255,255,0.50);font-size:0.82rem;'>Assessment #{total - i}</div>
+                </div>
+                <div style='display:flex;flex-wrap:wrap;gap:10px;'>
+                    <span style='background:rgba(255,255,255,0.10);border-radius:20px;padding:4px 12px;font-size:0.80rem;color:rgba(255,255,255,0.75);'>👤 {rec['gender']}</span>
+                    <span style='background:rgba(255,255,255,0.10);border-radius:20px;padding:4px 12px;font-size:0.80rem;color:rgba(255,255,255,0.75);'>🎂 Age: {rec['age']}</span>
+                    <span style='background:rgba(255,255,255,0.10);border-radius:20px;padding:4px 12px;font-size:0.80rem;color:rgba(255,255,255,0.75);'>⚖️ BMI: {rec['bmi']:.1f}</span>
+                    <span style='background:rgba(255,255,255,0.10);border-radius:20px;padding:4px 12px;font-size:0.80rem;color:rgba(255,255,255,0.75);'>🩸 Glucose: {rec['glucose']:.0f}</span>
+                    <span style='background:rgba(255,255,255,0.10);border-radius:20px;padding:4px 12px;font-size:0.80rem;color:rgba(255,255,255,0.75);'>💊 {rec['hypertension']}</span>
+                    <span style='background:rgba(255,255,255,0.10);border-radius:20px;padding:4px 12px;font-size:0.80rem;color:rgba(255,255,255,0.75);'>🚬 {rec['smoking']}</span>
+                </div>
+            </div>""", unsafe_allow_html=True)
+
+            # Delete button for each record
+            col_space, col_del = st.columns([4, 1])
+            with col_del:
+                if st.button(f"🗑️ Delete", key=f"del_{rec['id']}"):
+                    if db_delete_history(rec["id"]):
+                        st.success("Deleted!")
+                        time.sleep(0.5)
+                        st.rerun()
+
+        st.markdown("---")
+        st.markdown("<p style='text-align:center;color:rgba(255,255,255,0.40);font-size:0.78rem;'>Your health data is stored securely in the cloud ☁️</p>", unsafe_allow_html=True)
+
+    st.markdown("</div>", unsafe_allow_html=True)
+
+# ─── ROUTER ──────────────────────────────────────────────────
 if st.session_state.page == "auth":
     page_auth()
 elif st.session_state.page == "main":
     page_main()
 elif st.session_state.page == "summary":
     page_summary()
+elif st.session_state.page == "history":
+    page_history()
